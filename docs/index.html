@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>文档列表</title>
+    <!-- 引入 Markdown 解析库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 可选：引入 Bootstrap 样式 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #content { padding: 20px; border: 1px solid #ddd; margin-top: 20px; }
+    </style>
+</head>
+<body class="container mt-4">
+    <h1>文档列表</h1>
+    <div id="file-list"></div>
+    <div id="content"></div>
+
+    <script>
+        // 配置参数（需替换为你的仓库信息）
+        const REPO_OWNER = 'Turtur';
+        const REPO_NAME = 'findata';
+        const BRANCH = 'master'; // 默认分支名
+
+        // 获取文件列表
+        async function loadFileList() {
+            const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/day?ref=${BRANCH}`;
+            
+            try {
+                const response = await fetch(apiUrl);
+                const files = await response.json();
+                
+                // 按文件名（日期）降序排序
+                const sortedFiles = files
+                    .filter(file => file.name.endsWith('.md'))
+                    .sort((a, b) => b.name.localeCompare(a.name));
+
+                // 生成列表
+                const listHtml = sortedFiles.map(file => `
+                    <div class="mb-2">
+                        <a href="#" class="file-link" data-url="${file.download_url}">
+                            ${file.name.replace('.md', '')}
+                        </a>
+                    </div>
+                `).join('');
+
+                document.getElementById('file-list').innerHTML = listHtml;
+                
+                // 绑定点击事件
+                document.querySelectorAll('.file-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        loadMarkdownContent(link.dataset.url);
+                    });
+                });
+            } catch (error) {
+                console.error('加载文件列表失败:', error);
+            }
+        }
+
+        // 加载并渲染 Markdown 内容
+        async function loadMarkdownContent(url) {
+            try {
+                const response = await fetch(url);
+                const markdown = await response.text();
+                document.getElementById('content').innerHTML = marked.parse(markdown);
+            } catch (error) {
+                console.error('加载内容失败:', error);
+            }
+        }
+
+        // 初始化加载列表
+        loadFileList();
+    </script>
+</body>
+</html>
