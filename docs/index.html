@@ -30,20 +30,38 @@
                 const files = await response.json();
                 
                 // 按文件名（日期）降序排序
-                const sortedFiles = files
-                    .filter(file => file.name.endsWith('.md'))
-                    .sort((a, b) => b.name.localeCompare(a.name));
+const sortedFiles = files
+    .filter(file => file.name.endsWith('.md'))
+    .sort((a, b) => b.name.localeCompare(a.name));
 
-                // 生成列表
-                const listHtml = sortedFiles.map(file => `
-                    <div class="mb-2">
-                        <a href="#" class="file-link" data-url="${file.download_url}">
-                            ${file.name.replace('.md', '')}
-                        </a>
-                    </div>
-                `).join('');
+// 生成列表
+const listHtml = sortedFiles.map(file => `
+    <div class="mb-2">
+        <a href="#" class="file-link" data-url="${file.download_url}">
+            ${file.name.replace('.md', '')}
+        </a>
+    </div>
+`).join('');
 
-                document.getElementById('file-list').innerHTML = listHtml;
+document.getElementById('file-list').innerHTML = listHtml;
+
+// 默认折叠文档列表
+document.getElementById('file-list').style.display = 'none';
+
+// 显示第一个文档的名字
+if (sortedFiles.length > 0) {
+    const firstFileName = sortedFiles[0].name.replace('.md', '');
+    document.getElementById('file-list').innerHTML = `
+        <div class="mb-2">
+            <a href="#" class="file-link" data-url="${sortedFiles[0].download_url}">
+                ${firstFileName}
+            </a>
+        </div>
+    `;
+
+    // 自动加载第一个文档的内容
+    loadMarkdownContent(sortedFiles[0].download_url);
+}
                 
                 // 绑定点击事件
                 document.querySelectorAll('.file-link').forEach(link => {
