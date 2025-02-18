@@ -74,22 +74,23 @@
 
         // 获取文件列表
         async function loadFileList() {
-            const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/day?ref=${BRANCH}`;
+            const treeUrl = `https://github.com/${REPO_OWNER}/${REPO_NAME}/tree/${BRANCH}/day`;
             
             try {
-                const response = await fetch(apiUrl);
-                const files = await response.json();
+                const response = await fetch(treeUrl);
+                const html = await response.text();
                 
-                // 按文件名（日期）降序排序
-                const sortedFiles = files
-                    .filter(file => file.name.endsWith('.md'))
-                    .sort((a, b) => b.name.localeCompare(a.name));
+                // 从GitHub页面解析.md文件名
+                const mdFiles = [...html.matchAll(/href="\/Turtur\/findata\/blob\/master\/day\/([^"]+\.md)"/g)]
+                    .map(m => m[1])
+                    .filter(name => name.endsWith('.md'))
+                    .sort((a, b) => b.localeCompare(a));
 
                 // 生成列表
-                const listHtml = sortedFiles.map(file => `
+                const listHtml = mdFiles.map(fileName => `
                     <div class="mb-2">
                         <a href="#" class="file-link" data-url="${file.download_url}">
-                            ${file.name.replace('.md', '')}
+                            ${fileName.replace('.md', '')}
                         </a>
                     </div>
                 `).join('');
@@ -100,7 +101,8 @@
                 document.querySelectorAll('.file-link').forEach(link => {
                     link.addEventListener('click', (e) => {
                         e.preventDefault();
-                        loadMarkdownContent(link.dataset.url);
+                        const rawUrl = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/day/${encodeURIComponent(link.textContent.trim())}.md`;
+                        loadMarkdownContent(rawUrl);
                     });
                 });
             } catch (error) {
